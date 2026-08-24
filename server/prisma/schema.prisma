@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SlotStatus {
+  AVAILABLE
+  PENDING
+  BOOKED
+  BLOCKED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  EXPIRED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  UPI
+  CASH
+}
+
+enum PaymentStatus {
+  UNPAID
+  CASH_PENDING
+  VERIFICATION_PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// Lightweight identity for the phone-based "My Bookings" lookup — not a full
+// account system. First booking with a phone number sets the PIN; later
+// bookings/lookups with that phone must match it.
+model CustomerProfile {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  pinHash   String
+  createdAt DateTime @default(now())
+}
+
+model Admin {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  auditLogs    AuditLog[]
+}
+
+model Turf {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  slots       Slot[]
+  bookings    Booking[]
+}
+
+model Slot {
+  id        String     @id @default(cuid())
+  turfId    String
+  turf      Turf       @relation(fields: [turfId], references: [id])
+  date      DateTime   @db.Date
+  startTime DateTime
+  endTime   DateTime
+  price     Decimal    @db.Decimal(10, 2)
+  status    SlotStatus @default(AVAILABLE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bookings  Booking[]
+
+  @@unique([turfId, date, startTime])
+  @@index([turfId, date])
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  bookingRef    String        @unique
+  turfId        String
+  turf          Turf          @relation(fields: [turfId], references: [id])
+  slotId        String
+  slot          Slot          @relation(fields: [slotId], references: [id])
+  customerName  String
+  customerPhone String
+  paymentMethod PaymentMethod
+  bookingStatus BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  amount        Decimal       @db.Decimal(10, 2)
+  expiresAt     DateTime?
+  isWalkIn      Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  payment       Payment?
+  auditLogs     AuditLog[]
+
+  @@index([slotId])
+  @@index([customerPhone])
+  @@index([bookingStatus])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  bookingId       String        @unique
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  method          PaymentMethod
+  status          PaymentStatus
+  verifiedByAdmin String?
+  verifiedAt      DateTime?
+  // What the customer typed after paying via UPI — gives admin something
+  // concrete to search for in their bank/UPI app instead of just amount+time.
+  transactionRef  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  adminId         String
+  admin           Admin    @relation(fields: [adminId], references: [id])
+  action          String
+  targetBookingId String?
+  targetBooking   Booking? @relation(fields: [targetBookingId], references: [id])
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetBookingId])
+}
