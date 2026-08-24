@@ -18,8 +18,11 @@ router.post("/", async (req, res) => {
   }
 
   const token = createSessionToken({ sub: admin.id, role: "admin" });
-  res.cookie("gz_admin_session", token, {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 86_400_000,
+    res.cookie("gz_admin_session", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 86_400_000,
   });
   res.json({ id: admin.id, email: admin.email });
 });

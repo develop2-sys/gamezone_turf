@@ -1,6 +1,7 @@
-// Central fetch helper — every call goes through here, so base URL/credentials
-// are configured once, not repeated in every page.
-const BASE = "/api";
+// In production, the frontend and backend are on different domains,
+// so the API base URL must be set explicitly via an env var.
+// Locally, it stays empty and vite.config.js's proxy handles /api.
+const BASE = (import.meta.env.VITE_API_URL || "") + "/api";
 
 async function request(path, options = {}) {
   const res = await fetch(BASE + path, {
