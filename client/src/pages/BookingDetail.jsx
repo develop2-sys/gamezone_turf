@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { api } from "../api.js";
+import Toast from "../components/Toast.jsx";
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -10,6 +11,7 @@ export default function BookingDetail() {
   const [busy, setBusy] = useState(false);
   const [txnRef, setTxnRef] = useState("");
   const [payError, setPayError] = useState("");
+
 
   async function load() {
     try {
@@ -26,11 +28,11 @@ export default function BookingDetail() {
     return () => clearInterval(interval);
   }, [id]);
 
-    async function markPaid() {
+     async function markPaid() {
     setPayError("");
     setBusy(true);
     try {
-      await api.post(`/bookings/${id}/pay`, { transactionRef: txnRef.trim() });
+      await api.post(`/bookings/${id}/pay`, { transactionRef: null });
       await load();
     } catch (e) {
       setPayError(e.message);
@@ -59,25 +61,18 @@ export default function BookingDetail() {
         <p>Payment: {booking.paymentMethod} - {booking.paymentStatus}</p>
       </div>
 
-      {booking.paymentMethod === "UPI" && booking.paymentStatus === "UNPAID" && (
+          {booking.paymentMethod === "UPI" && booking.paymentStatus === "UNPAID" && (
         <div>
-          {upiUri && (
+                 {upiConfig && (
             <div className="bg-white rounded-xl p-4 flex flex-col items-center mb-4">
-              <QRCodeSVG value={upiUri} size={200} />
+                <img src="/QR.png" alt="1122" width={200} height={200} />
               <p className="text-black text-sm mt-2 font-semibold">{upiConfig.upiId}</p>
               <p className="text-black text-xs">{upiConfig.payeeName}</p>
             </div>
           )}
           <p className="text-sm text-gray-400 mb-4 text-center">Scan with any UPI app and pay ₹{booking.amount}</p>
-
-          <label className="block text-sm text-gray-400 mb-1.5">UPI transaction reference / UTR number <span className="text-gray-600">(optional)</span></label>          <input
-            value={txnRef}
-            onChange={(e) => setTxnRef(e.target.value)}
-            placeholder="From your UPI app after paying"
-            className="w-full mb-3 p-3 rounded-xl bg-surface-card border border-white/10"
-          />
-          {payError && <p className="text-red-400 text-sm mb-3">{payError}</p>}
-          <button onClick={markPaid} disabled={busy} className="w-full p-4 rounded-xl bg-brand font-semibold text-black disabled:opacity-50">
+          <Toast message={payError} onDismiss={() => setPayError("")} />
+          <button onClick={() => markPaid()} disabled={busy} className="w-full p-4 rounded-xl bg-brand font-display font-bold text-lg text-black tracking-wide disabled:opacity-50 hover:bg-brand-light transition-colors">
             {busy ? "Submitting..." : "I HAVE PAID"}
           </button>
         </div>
