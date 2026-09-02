@@ -4,7 +4,6 @@ import { api } from "../api.js";
 import Spinner from "./Spinner.jsx";
 
 const NAV = [
-  { to: "/", label: "Home" },
   { to: "/admin/requests", label: "Requests" },
   { to: "/admin/slots", label: "Slots" },
   { to: "/admin/walkins", label: "Walk-in" },
