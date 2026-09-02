@@ -28,11 +28,11 @@ export default function BookingDetail() {
     return () => clearInterval(interval);
   }, [id]);
 
-     async function markPaid() {
+      async function markPaid() {
     setPayError("");
     setBusy(true);
     try {
-      await api.post(`/bookings/${id}/pay`, { transactionRef: null });
+      await api.post(`/bookings/${id}/pay`, {});
       await load();
     } catch (e) {
       setPayError(e.message);
@@ -65,7 +65,7 @@ export default function BookingDetail() {
         <div>
                  {upiConfig && (
             <div className="bg-white rounded-xl p-4 flex flex-col items-center mb-4">
-                <img src="/QR.png" alt="1122" width={200} height={200} />
+<img src="/QR.png" alt="UPI QR Code" width={200} height={200} />
               <p className="text-black text-sm mt-2 font-semibold">{upiConfig.upiId}</p>
               <p className="text-black text-xs">{upiConfig.payeeName}</p>
             </div>
